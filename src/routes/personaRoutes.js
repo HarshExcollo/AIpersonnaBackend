@@ -26,8 +26,8 @@ router.get('/traits', async (req, res) => {
 // Get all personas (uses direct collection access)
 router.get('/', async (req, res) => {
   try {
-    const database = mongoose.connection.db;
-    const personasCollection = database.collection('personas');
+    const aiPersonnaDb = mongoose.connection.client.db('aiPersona');
+    const personasCollection = aiPersonnaDb.collection('personas');
     const personas = await personasCollection.find({}).toArray();
     res.status(200).json({ success: true, data: personas });
   } catch (error) {
@@ -38,8 +38,8 @@ router.get('/', async (req, res) => {
 // Store new persona data (uses direct collection access)
 router.post('/store-persona', async (req, res) => {
   try {
-    const database = mongoose.connection.db;
-    const personasCollection = database.collection('personas');
+    const aiPersonnaDb = mongoose.connection.client.db('aiPersonna');
+    const personasCollection = aiPersonnaDb.collection('personas');
     // Accept all persona fields
     const { id, name, role, department, avatar, hasStartChat, traits } = req.body;
     if (!id || !name || !role || !department || !avatar) {
@@ -74,19 +74,26 @@ router.post('/store-persona', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const personaId = req.params.id;
-    const database = mongoose.connection.db;
-    const personasCollection = database.collection('personas');
+    const aiPersonnaDb = mongoose.connection.client.db('aiPersona');
+    const personasCollection = aiPersonnaDb.collection('personas');
     // Fetch persona from MongoDB
     let personaData = await personasCollection.findOne({ id: personaId });
     if (!personaData) {
-      // If not found, return a default persona
       personaData = {
         id: personaId.toString(),
         name: "AI Persona",
         role: "Default Role",
         avatar: "https://randomuser.me/api/portraits/lego/1.jpg",
-        description: "Default persona description"
+        description: "Default persona description",
+        department: "",
+        hasStartChat: false,
+        traits: [],
+        updatedAt: new Date()
       };
+    }
+    // Ensure avatar is always present
+    if (!personaData.avatar) {
+      personaData.avatar = "https://randomuser.me/api/portraits/lego/1.jpg";
     }
     // Always fetch traits from test.personatraits for any persona
     const testDb = mongoose.connection.client.db('test');
@@ -103,7 +110,9 @@ router.get('/:id', async (req, res) => {
       if (doc.keyResponsibilities) traits.push({ title: "Key Responsibilities", description: Array.isArray(doc.keyResponsibilities) ? doc.keyResponsibilities.join('\n') : doc.keyResponsibilities });
     }
     personaData.traits = traits;
-    res.status(200).json({ success: true, data: personaData });
+    // Return all fields for consistency
+    const { id, name, role, department, avatar, description, hasStartChat, traits: personaTraits, updatedAt } = personaData;
+    res.status(200).json({ success: true, data: { id, name, role, department, avatar, description, hasStartChat, traits: personaTraits, updatedAt } });
   } catch (error) {
     console.error('Error fetching persona:', error);
     res.status(500).json({ success: false, message: 'Error fetching persona', error: error.message });
