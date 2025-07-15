@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const authService = require('../services/authService');
-const bcrypt = require('bcrypt'); // Add this at the top if not present
+const bcrypt = require('bcryptjs');
 
 exports.register = async (req, res) => {
   try {
