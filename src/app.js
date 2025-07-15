@@ -9,7 +9,10 @@ const setupSwagger = require('./swagger');
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: [
+    'http://localhost:5173',
+    'https://a-ipersonna-frontend.vercel.app'
+  ],
   credentials: true
 }));
 
