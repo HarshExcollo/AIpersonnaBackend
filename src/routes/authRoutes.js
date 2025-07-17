@@ -4,6 +4,7 @@ const authController = require('../controller/authController');
 const validators = require('../validators/authValidators');
 const { validationResult } = require('express-validator');
 const { authLimiter } = require('../middleware/rateLimiter');
+const authenticateJWT = require('../middleware/auth');
 
 // Middleware to handle validation errors
 function handleValidation(req, res, next) {
@@ -164,5 +165,8 @@ router.post('/register', authLimiter, validators.registerValidator, handleValida
  *                   example: Login failed
  */
 router.post('/login', authLimiter, validators.loginValidator, handleValidation, authController.login);
+
+router.get('/favorites', authenticateJWT, authController.getFavorites);
+router.post('/favorites/toggle', authenticateJWT, authController.toggleFavoritePersona);
 
 module.exports = router; 

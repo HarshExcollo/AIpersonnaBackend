@@ -19,6 +19,9 @@ app.use(cors({
 // Middleware (body parser, etc.)
 app.use(express.json());
 
+// Serve uploaded files statically
+app.use('/uploads', express.static('uploads'));
+
 // Connect to MongoDB
 mongoose.connect(config.mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('MongoDB connected'))

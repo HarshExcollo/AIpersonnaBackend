@@ -59,4 +59,61 @@ exports.resetPassword = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Failed to process request' });
   }
+};
+
+// Get favorite personas for the current user
+exports.getFavorites = async (req, res) => {
+  try {
+    console.log('Get favorites request:', { user: req.user });
+    const userId = req.user.id;
+    console.log('Looking for user with _id:', userId);
+    const user = await User.findOne({ _id: userId });
+    console.log('Found user:', user ? 'Yes' : 'No');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    res.json({ success: true, favorites: user.favorites || [] });
+  } catch (error) {
+    console.error('Error in getFavorites:', error);
+    res.status(500).json({ success: false, message: 'Error fetching favorites', error: error.message });
+  }
+};
+
+// Toggle favorite persona for the current user
+exports.toggleFavoritePersona = async (req, res) => {
+  try {
+    console.log('Toggle favorite request:', { user: req.user, body: req.body });
+    const userId = req.user.id;
+    const { personaId } = req.body;
+    if (!personaId) return res.status(400).json({ success: false, message: 'Missing personaId' });
+    
+    console.log('Looking for user with _id:', userId);
+    const user = await User.findOne({ _id: userId });
+    console.log('Found user:', user ? 'Yes' : 'No');
+    
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    
+    const currentFavorites = user.favorites || [];
+    const idx = currentFavorites.indexOf(personaId);
+    let newFavorites;
+    let action;
+    
+    if (idx === -1) {
+      newFavorites = [...currentFavorites, personaId];
+      action = 'added';
+    } else {
+      newFavorites = currentFavorites.filter(id => id !== personaId);
+      action = 'removed';
+    }
+    
+    // Use findByIdAndUpdate to avoid validation issues
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { favorites: newFavorites },
+      { new: true, runValidators: false }
+    );
+    
+    res.json({ success: true, favorites: updatedUser.favorites, action });
+  } catch (error) {
+    console.error('Error in toggleFavoritePersona:', error);
+    res.status(500).json({ success: false, message: 'Error toggling favorite', error: error.message });
+  }
 }; 

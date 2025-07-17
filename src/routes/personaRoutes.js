@@ -6,9 +6,52 @@ const Chat = require('../models/Chat');
 const PersonaTrait = require('../models/PersonaTrait');
 const authenticateJWT = require('../middleware/auth');
 
+// --- File upload setup ---
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
+
+const uploadDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  fileFilter: (req, file, cb) => {
+    // Accept images and docs only
+    if (/image|pdf|msword|vnd.openxmlformats-officedocument/.test(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images and documents are allowed!'));
+    }
+  }
+});
+
+router.post('/upload', authenticateJWT, upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+  const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  res.json({ success: true, fileUrl, fileType: req.file.mimetype });
+});
+
 // Chat message routes - MUST come before /:id routes
 router.post('/chats', authenticateJWT, chatController.saveMessage);
 router.get('/chats', authenticateJWT, chatController.getMessages);
+router.post('/chats/archive', authenticateJWT, chatController.archiveSession);
+router.post('/chats/unarchive', authenticateJWT, chatController.unarchiveSession);
+router.get('/chats/all', authenticateJWT, chatController.getAllChatsForPersona);
+router.get('/chats/recent', authenticateJWT, chatController.getRecentChats);
 
 // Get all traits for a persona (uses direct collection access)
 router.get('/traits', async (req, res) => {
@@ -79,11 +122,11 @@ router.get('/:id', async (req, res) => {
     // Fetch persona from MongoDB
     let personaData = await personasCollection.findOne({ id: personaId });
     if (!personaData) {
-      personaData = {
-        id: personaId.toString(),
-        name: "AI Persona",
-        role: "Default Role",
-        avatar: "https://randomuser.me/api/portraits/lego/1.jpg",
+        personaData = {
+          id: personaId.toString(),
+          name: "AI Persona",
+          role: "Default Role",
+          avatar: "https://randomuser.me/api/portraits/lego/1.jpg",
         description: "Default persona description",
         department: "",
         hasStartChat: false,
