@@ -52,6 +52,7 @@ router.post('/chats/archive', authenticateJWT, chatController.archiveSession);
 router.post('/chats/unarchive', authenticateJWT, chatController.unarchiveSession);
 router.get('/chats/all', authenticateJWT, chatController.getAllChatsForPersona);
 router.get('/chats/recent', authenticateJWT, chatController.getRecentChats);
+router.put('/chats/edit', authenticateJWT, chatController.editMessage);
 
 // Get all traits for a persona (uses direct collection access)
 router.get('/traits', async (req, res) => {

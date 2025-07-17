@@ -216,15 +216,42 @@ exports.getRecentChats = async (req, res) => {
     console.error('Error in getRecentChats:', error);
     res.status(500).json({ success: false, message: 'Error fetching recent chats', error: error.message });
   }
-}; 
+};
 
-
-
-
-
-
-
-
-
-
-
+// Edit a chat message
+exports.editMessage = async (req, res) => {
+  try {
+    const user = req.user.id;
+    const { messageId, newText, newAIResponse } = req.body;
+    
+    if (!user || !messageId || !newText) {
+      return res.status(400).json({ success: false, message: 'Missing required fields: messageId, newText.' });
+    }
+    
+    // Find the chat message and verify it belongs to the user
+    const chat = await Chat.findOne({ 
+      _id: messageId,
+      user: user
+    });
+    
+    if (!chat) {
+      return res.status(404).json({ success: false, message: 'Message not found or unauthorized.' });
+    }
+    
+    // Update the user_message field
+    chat.user_message = newText;
+    if (newAIResponse !== undefined) {
+      chat.ai_response = newAIResponse;
+    }
+    await chat.save();
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Message updated successfully',
+      chat: chat
+    });
+  } catch (error) {
+    console.error('Error in editMessage:', error);
+    res.status(500).json({ success: false, message: 'Error editing message', error: error.message });
+  }
+};
