@@ -39,10 +39,14 @@ const upload = multer({
   }
 });
 
-router.post('/upload', authenticateJWT, upload.single('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
-  const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-  res.json({ success: true, fileUrl, fileType: req.file.mimetype });
+router.post('/upload', authenticateJWT, upload.array('uploadedImages', 5), (req, res) => {
+  if (!req.files || req.files.length === 0) return res.status(400).json({ success: false, message: 'No files uploaded' });
+  const files = req.files.map(file => ({
+    fileUrl: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
+    fileType: file.mimetype,
+    originalName: file.originalname
+  }));
+  res.json({ success: true, files });
 });
 
 // Chat message routes - MUST come before /:id routes

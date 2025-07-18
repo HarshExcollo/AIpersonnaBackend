@@ -5,11 +5,11 @@ exports.saveMessage = async (req, res) => {
   try {
     console.log('req.user:', req.user); // Debug log
     const user = req.user && req.user.id ? req.user.id : undefined; // Always use the logged-in user's id
-    const { persona, session_id, user_message, ai_response, fileUrl, fileType } = req.body;
+    const { persona, session_id, user_message, ai_response, fileUrl, fileType, fileUrls, fileTypes } = req.body;
     if (!user || !persona || !session_id || !user_message || !ai_response) {
       return res.status(400).json({ success: false, message: 'Missing required fields: user, persona, session_id, user_message, ai_response.' });
     }
-    const chat = new Chat({ user, persona, session_id, user_message, ai_response, fileUrl, fileType });
+    const chat = new Chat({ user, persona, session_id, user_message, ai_response, fileUrl, fileType, fileUrls, fileTypes });
     await chat.save();
     res.status(201).json({ success: true, chat });
   } catch (error) {

@@ -9,7 +9,9 @@ const chatSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
   archived: { type: Boolean, default: false }, // Add archived field
   fileUrl: { type: String }, // Optional file attachment URL
-  fileType: { type: String } // Optional file type
+  fileType: { type: String }, // Optional file type
+  fileUrls: [{ type: String }], // Optional multiple file attachment URLs
+  fileTypes: [{ type: String }], // Optional multiple file types
 });
 
 module.exports = mongoose.model('Chat', chatSchema); 
